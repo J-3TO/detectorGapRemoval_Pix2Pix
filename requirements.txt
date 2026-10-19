@@ -1,0 +1,8 @@
+torch>=2.0
+lightning>=2.0
+numpy
+scipy
+pillow
+pyyaml
+huggingface_hub
+matplotlib

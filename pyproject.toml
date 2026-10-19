@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gap-pix2pix"
+version = "1.0.0"
+description = "Pix2Pix inpainting of detector gaps in X-ray projections and sinograms"
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.9"
+dependencies = ["torch>=2.0", "numpy", "scipy", "pillow", "pyyaml", "huggingface_hub"]
+
+[project.optional-dependencies]
+train = ["lightning>=2.0"]
+
+[tool.setuptools]
+packages = ["gap_pix2pix"]

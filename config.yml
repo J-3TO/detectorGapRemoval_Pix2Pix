@@ -1,0 +1,68 @@
+# Training config: where to start from, the data sources, the synthetic gaps, the loss weights and
+# the arguments of lightning.Trainer. The model settings are those of the released model; the data
+# paths are placeholders (see the README for the data format). Run with
+#
+#   python3 train.py --config config.yml
+
+name: gap_inpainting       # runs are written to <output_dir>/<name>/version_<k>/
+output_dir: runs
+seed: 43
+
+# Start from existing weights, with fresh optimizers (empty: train from scratch):
+#   hf:pix2pix_projections_sinograms_full.pth   the released model (generator + discriminator)
+#   or a path to a generator .pth (the discriminator then starts from scratch), a full .pth or a .ckpt
+init_weights:
+# Continue an interrupted run exactly where it stopped (weights, optimizers, epoch), e.g.
+#   runs/gap_inpainting/version_0/checkpoints/last.ckpt   (takes precedence over init_weights)
+resume:
+
+patch_size: [256, 128]   # (rows, columns); for sinograms (angles, detector columns)
+gap_width_y: [7, 40]     # height of synthetic horizontal gaps (pixels, inclusive range)
+gap_width_x: [7, 40]     # width of synthetic vertical gaps
+
+data:
+  train:
+    length: 7368          # samples per epoch
+    augment: true         # Poisson noise, Gaussian blur, flips
+    sources:              # every sample comes from one source, drawn with these weights
+      - type: projections
+        weight: 0.35
+        files: /path/to/projections/train/*.npy
+      - type: images
+        weight: 0.15
+        root: /path/to/imagenet/val
+      - type: sinograms
+        weight: 0.5
+        files: /path/to/sinograms/train/*.npy
+        modules: pilatus3_2m   # patches stay inside one gap-free detector module
+  val:
+    length: 2520
+    augment: false
+    sources:
+      - type: projections
+        weight: 0.5
+        files: /path/to/projections/val/*.npy
+      - type: sinograms
+        weight: 0.5
+        files: /path/to/sinograms/val/*.npy
+        modules: pilatus3_2m
+
+loader:
+  batch_size: 32
+  num_workers: 32
+
+model:
+  lr: 2.0e-4
+  betas: [0.5, 0.999]
+  lambda_adv: 2.0
+  lambda_mse: 1.0
+  lambda_mean: 100.0
+  lambda_histo: 3.0        # EMD histogram loss of the gap pixels (0 = off)
+  histo_bandwidth: 1.0     # kernel width of the soft histograms, in bins
+  label_smooth: 0.9
+
+trainer:                   # any argument of lightning.Trainer
+  devices: auto            # GPUs, e.g. [0] or [0, 1]; auto = all available
+  max_epochs: 2000
+  precision: "32"
+checkpoint_every_n_epochs: 50
