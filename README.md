@@ -2,6 +2,8 @@
 
 Inpainting of detector gaps in X-ray projections and sinograms with a Pix2Pix GAN.
 
+![A projection (left) and a sinogram (right) before and after inpainting of the detector gaps, each with a zoom](Thumbnail.png)
+
 Tiled photon-counting detectors (e.g. the DECTRIS Pilatus3 2M) have insensitive gaps between their
 modules: whole rows and columns of every projection are missing. The generator, a U-Net, gets the
 image with its gaps linearly interpolated plus the gap mask, and predicts a correction inside the
