@@ -1,6 +1,7 @@
 """Inpainting detector gaps with a trained generator.
 
-`inpaint` fills the gaps of every image of a stack (projections, or any other 2D images):
+`inpaint` fills the gaps of every image of a stack (projections, or any other 2D images), in
+batches, with the generator's `UNetMask.predict`:
 
     1. z-score the image with the mean / std of its valid pixels
     2. interpolate the gaps linearly
@@ -12,7 +13,7 @@
 import numpy as np
 import torch
 
-from .interpolation import interpolate_gaps, split_grid_mask
+from .interpolation import split_grid_mask
 
 
 @torch.no_grad()
@@ -45,13 +46,8 @@ def inpaint(images, gap_mask, generator, batch_size=1, progress=False):
     valid = torch.from_numpy((~gap_mask).astype(np.float32)).to(device)[None, None]
     out = np.empty_like(stack)
     for start in range(0, len(stack), batch_size):
-        batch = stack[start:start + batch_size]
-        mean = batch[:, ~gap_mask].mean(axis=1)[:, None, None]
-        std = np.maximum(batch[:, ~gap_mask].std(axis=1), 1e-12)[:, None, None]
-        x = interpolate_gaps((batch - mean) / std, gap_mask)
-        y = generator(torch.from_numpy(x[:, None]).to(device), valid.expand(len(x), -1, -1, -1))
-        y = y[:, 0].cpu().numpy() * std + mean
-        out[start:start + batch_size] = np.where(gap_mask, y, batch)
+        batch = torch.from_numpy(np.ascontiguousarray(stack[start:start + batch_size])).to(device)
+        out[start:start + batch_size] = generator.predict(batch[:, None], valid)[:, 0].cpu().numpy()
         if progress:
             print(f"\r{min(start + batch_size, len(stack))}/{len(stack)}", end="", flush=True)
     if progress:

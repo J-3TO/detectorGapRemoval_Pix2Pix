@@ -37,6 +37,12 @@ filled = inpaint_sinograms(projections, mask, generator)  # gap columns in the s
 The input are flat-field corrected projections `(N, H, W)`. For other detectors,
 `detector_gap_mask(module_size, gap_size, grid)` builds the mask of a regular module grid.
 
+The preprocessing is part of the model: `generator.predict(x, valid)` takes raw images as tensors
+`(B, 1, H, W)` and a mask (1 = valid, 0 = gap), z-scores each image over its valid pixels,
+interpolates the gaps linearly, runs the U-Net, undoes the z-score and returns the valid pixels
+unchanged. `inpaint` calls it batch by batch. (`generator(x, valid)` itself is the training
+interface and expects already z-scored, interpolated input.)
+
 The pretrained weights are on the Hugging Face Hub,
 [J-3TO/detectorGapRemoval_Pix2Pix](https://huggingface.co/J-3TO/detectorGapRemoval_Pix2Pix):
 `pix2pix_projections_sinograms_generator.pth` (generator, for inference) and

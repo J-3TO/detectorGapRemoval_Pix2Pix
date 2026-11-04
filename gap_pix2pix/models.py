@@ -8,6 +8,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from .interpolation import interpolate_gaps_torch
+
 
 class DoubleConv(nn.Module):
     """(Conv -> BatchNorm -> ReLU) x 2"""
@@ -70,6 +72,9 @@ class UNetMask(nn.Module):
     the gap only, so pixels outside the gap are passed through unchanged:
 
         output = x + unet([x, mask]) * (1 - mask)
+
+    `forward` is the training interface: x is already z-scored and interpolated (as the training
+    patches are). For inference on raw images use `predict`, which does both itself.
     """
 
     def __init__(self):
@@ -96,6 +101,31 @@ class UNetMask(nn.Module):
         y = self.up3(y, x2)
         y = self.up4(y, x1)
         return x + self.outc(y) * (1 - mask)
+
+    @torch.no_grad()
+    def predict(self, x, valid):
+        """Fill the gaps of raw images (inference; the model should be in eval mode):
+
+            1. z-score each image with the mean / std of its valid pixels
+            2. interpolate the gaps linearly
+            3. forward
+            4. undo the z-score; valid pixels are returned unchanged
+
+        Args:
+            x: (B, 1, H, W) images, e.g. flat-field corrected projections; values in the gaps
+                (also NaN) are ignored.
+            valid: (B, 1, H, W) or (1, 1, H, W), 1 = valid pixel, 0 = gap; the gaps must be
+                complete rows and columns.
+        """
+        valid = valid.to(x.dtype).expand_as(x)
+        gap = valid == 0
+        n = valid.sum(dim=(-2, -1), keepdim=True)
+        x0 = torch.where(gap, 0.0, x)
+        mean = x0.sum(dim=(-2, -1), keepdim=True) / n
+        var = (torch.where(gap, 0.0, x0 - mean) ** 2).sum(dim=(-2, -1), keepdim=True) / n
+        std = var.sqrt().clamp(min=1e-12)
+        y = self((interpolate_gaps_torch(x0, valid) - mean) / std, valid) * std + mean
+        return torch.where(gap, y, x)
 
 
 class PatchGANDiscriminator(nn.Module):
