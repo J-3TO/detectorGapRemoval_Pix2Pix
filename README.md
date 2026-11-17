@@ -1,6 +1,10 @@
 # detectorGapRemoval_Pix2Pix
 
-Inpainting of detector gaps in X-ray projections and sinograms with a Pix2Pix GAN.
+[![arXiv](https://img.shields.io/badge/arXiv-2611.15614-b31b1b.svg?style=flat)](https://arxiv.org/abs/2611.15614)
+
+Inpainting of detector gaps in X-ray projections and sinograms with a Pix2Pix GAN. Code and
+pretrained model of the preprint
+[*Learning-Based Interpolation of Detector Gaps in Photon-Counting X-ray Imaging*](https://arxiv.org/abs/2611.15614).
 
 ![A projection (left) and a sinogram (right) before and after inpainting of the detector gaps, each with a zoom](Thumbnail.png)
 
@@ -92,7 +96,20 @@ config. A checkpoint can be used for inference directly: `load_generator("runs/.
 
 ## Citation
 
-TODO: add the reference of the paper.
+If you use this code or the pretrained weights, please cite the preprint
+([arXiv:2611.15614](https://arxiv.org/abs/2611.15614)):
+
+```bibtex
+@misc{thalhammer2026gapinterpolation,
+  title         = {Learning-Based Interpolation of Detector Gaps in Photon-Counting X-ray Imaging},
+  author        = {Thalhammer, Johannes B. and Ilg, Patrick and Dorosti, Tina and Peterhansl, Sebastian and Hiu, Theresa and Frey, Daniel and Huang, Zijin and Schaff, Florian and Pfeiffer, Daniela and Pfeiffer, Franz},
+  year          = {2026},
+  eprint        = {2611.15614},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CV},
+  url           = {https://arxiv.org/abs/2611.15614}
+}
+```
 
 ## License and acknowledgements
 
